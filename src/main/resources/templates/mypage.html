@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>마이페이지</title>
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f0f2f5; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+
+        /* 카드 스타일 */
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+
+        h2 { margin-top: 0; color: #34495e; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+
+        /* 프로필 정보 */
+        .profile-info p { font-size: 1.1em; margin: 10px 0; }
+        .label { font-weight: bold; display: inline-block; width: 100px; color: #7f8c8d; }
+
+        /* 테이블 스타일 */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background-color: #f8f9fa; color: #333; }
+
+        /* 버튼 */
+        .home-btn {
+            display: inline-block; background-color: #34495e; color: white;
+            padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/home" class="home-btn">🏠 홈으로 돌아가기</a>
+
+    <div class="card">
+        <h2>👤 내 정보</h2>
+        <div class="profile-info">
+            <p><span class="label">이름</span> <span th:text="${member.name}">홍길동</span></p>
+            <p><span class="label">이메일</span> <span th:text="${member.email}">test@test.com</span></p>
+            <p><span class="label">나이</span> <span th:text="${member.age} + '세'">25세</span></p>
+            <p><span class="label">등급</span> <span th:text="${member.role}">USER</span></p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🕒 나의 이용 기록</h2>
+        <div th:if="${#lists.isEmpty(histories)}" style="text-align: center; color: #888; padding: 20px;">
+            아직 활동 기록이 없습니다.
+        </div>
+
+        <table th:unless="${#lists.isEmpty(histories)}">
+            <thead>
+            <tr>
+                <th>날짜</th>
+                <th>활동 유형</th>
+                <th>내용</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="log : ${histories}">
+                <td th:text="${#temporals.format(log.createdDate, 'yyyy-MM-dd HH:mm')}">2026-02-01 12:00</td>
+
+                <td>
+                    <span th:if="${log.type.name() == 'RESERVE'}" style="color:blue">예약</span>
+                    <span th:if="${log.type.name() == 'CANCEL'}" style="color:orange">취소</span>
+                    <span th:if="${log.type.name() == 'SIGNUP'}" style="color:green">가입</span>
+                    <span th:if="${log.type.name() == 'FORCE_CANCEL'}" style="color:red">강제퇴실</span>
+                </td>
+
+                <td th:text="${log.description}">내용</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

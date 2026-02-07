@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 대시보드</title>
+    <style>
+        .container { width: 80%; margin: 50px auto; font-family: 'Noto Sans KR', sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background-color: #34495e; color: white; } /* 헤더 색상 변경 (더 깔끔하게) */
+
+        .status-on { color: #e74c3c; font-weight: bold; } /* 빨강 */
+        .status-off { color: #2ecc71; font-weight: bold; } /* 초록 */
+
+        .cancel-btn {
+            background-color: #e74c3c; color: white;
+            border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px;
+            font-weight: bold;
+        }
+        .cancel-btn:hover { background-color: #c0392b; }
+
+        /* [추가] 상단 네비게이션 버튼 스타일 */
+        .nav-btn {
+            text-decoration: none; color: white; padding: 10px 15px;
+            border-radius: 5px; font-weight: bold; margin-right: 10px;
+            display: inline-block;
+        }
+        .home-btn { background-color: #95a5a6; } /* 회색 */
+        .log-btn { background-color: #8e44ad; }  /* 보라색 */
+
+        .nav-btn:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🛠️ 관리자 좌석 관리 시스템</h1>
+
+    <div style="margin-bottom: 20px; font-size: 1.1em;">
+        <strong>현재 이용 중인 좌석:</strong>
+        <span th:text="${occupiedCount}" style="color:red; font-weight:bold;">0</span> /
+        <span th:text="${totalCount}">0</span>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <a th:href="@{/home}" class="nav-btn home-btn">🏠 홈으로</a>
+        <a th:href="@{/admin/logs}" class="nav-btn log-btn">📜 로그 보기</a>
+    </div>
+
+    <hr>
+
+    <table>
+        <thead>
+        <tr>
+            <th style="width: 10%;">ID</th>
+            <th style="width: 15%;">좌석 번호</th>
+            <th style="width: 15%;">상태</th>
+            <th>예약자 이메일</th>
+            <th style="width: 15%;">관리</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="seat : ${seats}">
+            <td th:text="${seat.id}">1</td>
+            <td th:text="${seat.seatNumber + '번 좌석'}">1번 좌석</td>
+            <td>
+                <span th:if="${seat.isFull}" class="status-on">이용 중</span>
+                <span th:unless="${seat.isFull}" class="status-off">비어 있음</span>
+            </td>
+            <td th:text="${seat.member != null ? seat.member.email : '-'}">-</td>
+            <td>
+                <form th:if="${seat.isFull}" th:action="@{/member/admin/cancel/{id}(id=${seat.id})}" method="post">
+                    <button type="submit" class="cancel-btn">강제 퇴실</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

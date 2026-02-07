@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js" ></script>
+    <script type="text/javascript" src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"></script>
+
+    <meta charset="UTF-8">
+    <title>좌석 예약 시스템</title>
+    <style>
+        .header-container { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; background-color: #fff; }
+
+        /* [수정] 네비게이션 영역 비율 조정 */
+        .nav-area { display: flex; align-items: center; gap: 10px; }
+        .nav-area.left { flex: 1; justify-content: flex-start; }
+        .nav-area.right { flex: 1; justify-content: flex-end; } /* 오른쪽 끝 정렬 */
+
+        .main-title { flex: 2; text-align: center; font-size: 1.8rem; margin: 0; }
+
+        .nav-btn, .cancel-btn, .charge-btn {
+            padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white;
+        }
+        .nav-btn { background-color: #34495e; }
+        .cancel-btn { background-color: #e67e22; }
+        .charge-btn { background-color: #9b59b6; }
+
+        .seat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; padding: 20px; }
+        .seat-card { width: 120px; height: 120px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; color: white; border: 2px solid #333; }
+        .available { background-color: #2ecc71; }
+        .occupied { background-color: #e74c3c; }
+        .time-text { font-size: 0.85em; color: #f1c40f; margin-bottom: 2px; }
+        .error-msg { color: red; font-weight: bold; text-align: center; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-box { background: white; padding: 30px; border-radius: 10px; text-align: center; width: 300px; }
+        .modal-box select { padding: 8px; font-size: 16px; margin: 15px 0; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div class="header-container">
+    <div class="nav-area left">
+        <form th:action="@{/home}" method="get">
+            <button type="submit" class="nav-btn">홈으로</button>
+        </form>
+        <button type="button" onclick="openChargeModal()" class="charge-btn">⚡ 시간 충전</button>
+    </div>
+
+    <div style="text-align: center; flex: 2;">
+        <h1 class="main-title">스터디카페 좌석 현황</h1>
+        <div style="color: #2980b9; font-weight: bold; margin-top: 5px;">
+            ⏳ 내 총 잔여 시간: <span th:text="${remainingMinutes}">0</span>분
+        </div>
+    </div>
+
+    <div class="nav-area right">
+        <form th:action="@{/book/cancel}" method="post">
+            <button type="submit" class="cancel-btn">퇴실하기 (잔여시간 환불)</button>
+        </form>
+    </div>
+</div>
+
+<div class="error-msg">
+    <div th:if="${param.alreadyRegistered}">⚠️ 이미 이용 중입니다. 시간 충전을 하시거나 퇴실 후 이동해주세요.</div>
+    <div th:if="${param.noBooking}">⚠️ 이용 중인 좌석이 없습니다.</div>
+    <div th:if="${param.error}" th:text="${param.error}"></div>
+</div>
+<hr>
+
+<div class="seat-grid">
+    <div th:each="seat : ${seats}" th:classappend="${seat.isFull} ? 'occupied' : 'available'" class="seat-card">
+        <div th:text="${seat.seatNumber} + '번 좌석'"></div>
+
+        <div th:if="${!seat.isFull}" style="margin-top: 5px;">
+            <button type="button" th:onclick="'attemptReserve(' + ${seat.id} + ')'"
+                    style="cursor:pointer; border:1px solid white; background:transparent; color:white; padding:5px 10px; border-radius:4px;">
+                예약하기
+            </button>
+        </div>
+
+        <div th:if="${seat.isFull}" style="font-size: 0.8em; margin-top: 5px; text-align: center;">
+            <div class="time-text" th:text="${seat.remainingTimeStr} + ' 남음'"></div>
+            <span th:text="${seat.reservedByName}"></span>님
+        </div>
+    </div>
+</div>
+
+<div id="reserveModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3>💳 시간 부족 - 충전 및 예약</h3>
+        <p>잔여 시간이 부족합니다.<br>시간을 구매하면 바로 예약됩니다.</p>
+
+        <form id="reserveForm" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <input type="hidden" name="seatId" id="modalSeatId">
+            <input type="hidden" name="useAll" value="false">
+
+            <select name="duration" id="durationSelect">
+                <option value="1">1시간 (1,000원)</option>
+                <option value="2">2시간 (2,000원)</option>
+                <option value="4">4시간 (4,000원)</option>
+                <option value="6">6시간 (6,000원)</option>
+                <option value="12">12시간 (12,000원)</option>
+            </select>
+
+            <div style="margin-top: 15px; display: flex; justify-content: space-between;">
+                <button type="button" onclick="closeModal('reserveModal')" class="nav-btn" style="background:#95a5a6; width:45%;">취소</button>
+                <button type="button" onclick="requestPayAndReserve()" class="nav-btn" style="background:#3498db; width:45%;">결제 및 예약</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<form id="quickReserveForm" method="post" style="display:none;">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+    <input type="hidden" name="useAll" value="true">
+</form>
+
+<div id="chargeModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3>⚡ 시간 충전</h3>
+        <p>충전 시 이용 중인 좌석 시간이<br>자동으로 연장됩니다.</p>
+        <select id="chargeDuration">
+            <option value="1">1시간 (1,000원)</option>
+            <option value="2">2시간 (2,000원)</option>
+            <option value="4">4시간 (4,000원)</option>
+            <option value="6">6시간 (6,000원)</option>
+            <option value="12">12시간 (12,000원)</option>
+        </select>
+        <div style="margin-top: 15px; display: flex; justify-content: space-between;">
+            <button type="button" onclick="closeModal('chargeModal')" class="nav-btn" style="background:#95a5a6; width:45%;">취소</button>
+            <button type="button" onclick="requestCharge()" class="nav-btn" style="background:#9b59b6; width:45%;">결제하기</button>
+        </div>
+    </div>
+</div>
+
+<form id="chargeForm" method="post" action="/book/charge" style="display:none;">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+    <input type="hidden" name="duration" id="formChargeDuration">
+</form>
+
+<script th:inline="javascript">
+    var IMP = window.IMP;
+    IMP.init("imp85083064");
+
+    // 서버에서 받은 총 잔여 시간
+    var userRemainingMinutes = [[${remainingMinutes}]];
+
+    // [핵심 로직] 예약 시도
+    function attemptReserve(seatId) {
+        if (userRemainingMinutes > 0) {
+            // 1. 시간이 있으면: 모달 없이 즉시 예약 (보유 시간 전체 사용)
+            if(confirm("보유한 시간(" + userRemainingMinutes + "분)으로 바로 이용하시겠습니까?")) {
+                var form = document.getElementById('quickReserveForm');
+                form.action = '/book/' + seatId;
+                form.submit();
+            }
+        } else {
+            // 2. 시간이 없으면: 결제 모달 띄움
+            document.getElementById('reserveModal').style.display = 'flex';
+            document.getElementById('modalSeatId').value = seatId;
+        }
+    }
+
+    // 시간 충전 모달
+    function openChargeModal() {
+        document.getElementById('chargeModal').style.display = 'flex';
+    }
+
+    // 시간 충전 결제 요청
+    function requestCharge() {
+        var duration = document.getElementById('chargeDuration').value;
+        var price = duration * 1000;
+
+        IMP.request_pay({
+            pg: "kakaopay",
+            pay_method: "card",
+            merchant_uid: "CHG" + new Date().getTime(),
+            name: "시간 충전 " + duration + "시간",
+            amount: price,
+            buyer_email: "test@test.com",
+            buyer_name: "사용자"
+        }, function (rsp) {
+            if (rsp.success) {
+                alert("충전 성공! (이용 중인 좌석이 있다면 자동 연장됩니다)");
+                document.getElementById('formChargeDuration').value = duration;
+                document.getElementById('chargeForm').submit();
+            } else {
+                alert("결제 실패: " + rsp.error_msg);
+            }
+        });
+    }
+
+    // 예약 모달에서 결제 요청
+    function requestPayAndReserve() {
+        var seatId = document.getElementById('modalSeatId').value;
+        var duration = document.getElementById('durationSelect').value;
+        var price = duration * 1000;
+
+        IMP.request_pay({
+            pg: "kakaopay",
+            pay_method: "card",
+            merchant_uid: "RES" + new Date().getTime(),
+            name: duration + "시간 이용권",
+            amount: price,
+            buyer_email: "test@test.com",
+            buyer_name: "사용자"
+        }, function (rsp) {
+            if (rsp.success) {
+                alert("결제 성공! 예약을 확정합니다.");
+                var form = document.getElementById('reserveForm');
+                form.action = '/book/' + seatId;
+                form.submit();
+            } else {
+                alert("결제 실패: " + rsp.error_msg);
+            }
+        });
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+</script>
+
+</body>
+</html>

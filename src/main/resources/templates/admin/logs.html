@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>시스템 로그</title>
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; background-color: #f9f9f9; }
+
+        .header-container {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+        }
+        h1 { margin: 0; color: #34495e; }
+
+        /* 버튼 스타일 */
+        .back-btn {
+            background-color: #95a5a6; color: white; padding: 10px 20px;
+            text-decoration: none; border-radius: 5px; font-weight: bold;
+        }
+        .back-btn:hover { background-color: #7f8c8d; }
+
+        /* 테이블 스타일 */
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #34495e; color: white; }
+        tr:hover { background-color: #f1f1f1; }
+
+        /* 로그 타입별 색상 강조 */
+        .type-SIGNUP { color: #27ae60; font-weight: bold; } /* 가입: 초록 */
+        .type-RESERVE { color: #2980b9; font-weight: bold; } /* 예약: 파랑 */
+        .type-CANCEL { color: #e67e22; font-weight: bold; }  /* 취소: 주황 */
+        .type-FORCE_CANCEL { color: #c0392b; font-weight: bold; } /* 강제퇴실: 빨강 */
+    </style>
+</head>
+<body>
+
+<div class="header-container">
+    <h1>📋 시스템 통합 로그</h1>
+    <a href="/member/admin" class="back-btn">관리자 페이지로 돌아가기</a>
+</div>
+
+<table>
+    <thead>
+    <tr>
+        <th style="width: 5%">ID</th>
+        <th style="width: 15%">발생 시간</th>
+        <th style="width: 10%">유형</th>
+        <th style="width: 20%">사용자 (이메일)</th>
+        <th>상세 내용</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="log : ${logs}">
+        <td th:text="${log.id}">1</td>
+
+        <td th:text="${#temporals.format(log.createdDate, 'yyyy-MM-dd HH:mm:ss')}">2026-02-01 12:00:00</td>
+
+        <td th:text="${log.type}" th:classappend="'type-' + ${log.type}">RESERVE</td>
+
+        <td th:text="${log.member != null} ? ${log.member.email} : '(탈퇴한 회원)'">user@example.com</td>
+
+        <td th:text="${log.description}">3번 좌석 예약</td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>
