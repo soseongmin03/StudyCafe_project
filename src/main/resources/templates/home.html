@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>스터디카페 | 프리미엄 학습 공간</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        /* [전체 초기화] */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8f9fa; color: #333; }
+        a { text-decoration: none; color: inherit; }
+
+        /* [네비게이션 바] 상단 고정, 흰색 배경 */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 40px; background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: fixed; width: 100%; top: 0; z-index: 1000;
+        }
+        .navbar .logo { font-size: 1.5rem; font-weight: 700; color: #2c3e50; }
+        .navbar .nav-items { display: flex; align-items: center; gap: 20px; font-size: 0.95rem; }
+
+        /* [네비게이션 버튼 스타일] */
+        .btn-nav { padding: 8px 16px; border-radius: 20px; transition: 0.3s; font-weight: 500; }
+        .btn-admin { background-color: #34495e; color: white; }
+        .btn-admin:hover { background-color: #2c3e50; }
+        .btn-mypage { background-color: #ecf0f1; color: #2c3e50; }
+        .btn-mypage:hover { background-color: #bdc3c7; }
+        .btn-login { border: 1px solid #3498db; color: #3498db; }
+        .btn-login:hover { background-color: #3498db; color: white; }
+        .logout-btn { background: none; border: none; color: #7f8c8d; cursor: pointer; text-decoration: underline; font-family: inherit; font-size: 0.9rem;}
+
+        /* [히어로 섹션] 메인 비주얼 영역 */
+        .hero-section {
+            height: 100vh; /* 화면 전체 높이 */
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                        url('https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover; background-position: center;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; color: white; padding-top: 60px; /* 네비게이션 높이만큼 띄움 */
+        }
+        .hero-title { font-size: 3rem; margin-bottom: 20px; text-shadow: 2px 2px 10px rgba(0,0,0,0.3); }
+        .hero-subtitle { font-size: 1.2rem; margin-bottom: 40px; font-weight: 300; opacity: 0.9; }
+
+        /* [카드 섹션] 로그인/비로그인 상태에 따라 보여지는 박스 */
+        .action-card {
+            background: rgba(255, 255, 255, 0.15); /* 반투명 유리 효과 */
+            backdrop-filter: blur(10px);
+            padding: 40px 60px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        /* [메인 버튼] 예약하기, 회원가입 버튼 */
+        .primary-btn {
+            display: inline-block;
+            padding: 15px 40px;
+            font-size: 1.2rem; font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; border-radius: 50px;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .primary-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(118, 75, 162, 0.6); }
+
+        .secondary-btn {
+            display: inline-block; padding: 12px 30px;
+            font-size: 1.1rem; background: white; color: #333;
+            border: none; border-radius: 50px; cursor: pointer; font-weight: bold;
+            transition: 0.3s;
+        }
+        .secondary-btn:hover { background-color: #f1f1f1; transform: scale(1.05); }
+
+        /* 애니메이션 효과 */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">📖 StudyCafe</div>
+
+    <div class="nav-items">
+        <div th:if="${#authorization.expression('hasAuthority(''ROLE_ADMIN'')')}">
+            <a th:href="@{/member/admin}" class="btn-nav btn-admin">⚙️ 관리자 모드</a>
+        </div>
+
+        <div th:if="${#authorization.expression('isAuthenticated()')}">
+            <a th:href="@{/mypage}" class="btn-nav btn-mypage">👤 마이페이지</a>
+        </div>
+
+        <div th:if="${#authorization.expression('isAuthenticated()')}" style="display:flex; align-items:center; gap:10px;">
+            <span style="font-weight:bold; color:#2c3e50;"><span th:text="${#authentication.name}"></span>님</span>
+            <form th:action="@{/logout}" method="post" style="margin:0;">
+                <button type="submit" class="logout-btn">로그아웃</button>
+            </form>
+        </div>
+
+        <div th:if="${#authorization.expression('isAnonymous()')}">
+            <a th:href="@{/login}" class="btn-nav btn-login">로그인</a>
+        </div>
+    </div>
+</nav>
+
+<div class="hero-section">
+    <h1 class="hero-title">꿈을 향한 몰입의 공간</h1>
+    <p class="hero-subtitle">최상의 학습 환경, 프리미엄 스터디카페에서 시작하세요.</p>
+
+    <div th:if="${#authorization.expression('isAuthenticated()')}" class="action-card">
+        <h2 style="margin-bottom: 20px;">오늘의 목표를 달성해볼까요?</h2>
+        <a th:href="@{/book}">
+            <button class="primary-btn">📅 좌석 예약하러 가기</button>
+        </a>
+    </div>
+
+    <div th:if="${#authorization.expression('isAnonymous()')}" class="action-card">
+        <h3 style="margin-bottom: 15px;">처음 방문하셨나요?</h3>
+        <p style="margin-bottom: 25px; font-size: 0.9rem; opacity: 0.8;">회원이 되시면 실시간 좌석 확인 및 예약이 가능합니다.</p>
+        <a th:href="@{/signup}">
+            <button class="secondary-btn">✨ 3초만에 회원가입</button>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>
