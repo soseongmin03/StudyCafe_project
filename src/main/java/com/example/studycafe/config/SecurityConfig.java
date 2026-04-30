@@ -31,8 +31,8 @@ public class SecurityConfig {
             var member = memberRepository.findByEmail(username).orElseThrow(() ->
                     new UsernameNotFoundException("User not found" + username));
             System.out.println("======================================");
-            System.out.println("🔥 로그인 시도 이메일: " + username);
-            System.out.println("🔥 DB에 저장된 권한: [" + member.getRole() + "]");
+            System.out.println("로그인 시도 이메일: " + username);
+            System.out.println("DB에 저장된 권한: [" + member.getRole() + "]");
             System.out.println("======================================");
             // [수정 포인트] 권한을 더 명확하게 부여하는 코드로 변경
             return new User(
@@ -50,6 +50,7 @@ public class SecurityConfig {
                     .authorities(member.getRole()).build();
         };*/
     }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http.authorizeHttpRequests(authorize -> authorize
