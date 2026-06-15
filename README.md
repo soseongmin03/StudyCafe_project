@@ -106,23 +106,6 @@ http://localhost:8080
 
 관리자 계정 정보는 `DataInitializer`에서 확인할 수 있으며, 실제 배포 또는 공개 저장소에서는 반드시 별도 환경 변수나 시크릿 관리 방식으로 분리하는 것을 권장합니다.
 
-## 테스트
-
-전체 테스트 실행:
-
-```bash
-gradlew.bat test
-```
-
-주요 테스트 대상:
-
-- 좌석 예약 성공/실패
-- 보유 시간 부족 시 예약 실패
-- 이미 사용 중인 좌석 예약 실패
-- 시간 충전
-- 이용 중 좌석 시간 자동 연장
-- 예약 취소 및 남은 시간 환불
-- 관리자 강제 퇴실
 
 ## 핵심 비즈니스 규칙
 
@@ -133,15 +116,4 @@ gradlew.bat test
 - 예약 종료 시간이 지난 좌석은 스케줄러가 자동으로 비웁니다.
 - 회원의 활동 내역은 `History` 엔티티에 저장됩니다.
 
-## 문서
 
-추가 포트폴리오 문서는 `docs/` 디렉터리에서 확인할 수 있습니다.
-
-- `docs/studycafe-backend-portfolio.html`
-- `docs/studycafe-backend-portfolio.pdf`
-
-## 참고 사항
-
-- `application.properties`에 실제 DB 비밀번호를 커밋하지 않도록 주의해야 합니다.
-- 현재 프로젝트는 Thymeleaf 서버 렌더링 방식으로 화면을 제공합니다.
-- 인증은 세션 기반 Spring Security 로그인 방식을 사용합니다.
